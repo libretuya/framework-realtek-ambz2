@@ -1,0 +1,61 @@
+name: Deploy PlatformIO package
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Upstream ref
+        required: false
+        default: ''
+      version:
+        description: Package version
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    name: Deploy PlatformIO package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          repository: ambiot/ambz2_sdk
+          ref: ${{ inputs.ref }}
+      - name: Generate version number
+        id: version
+        run: |
+          echo version=$(date -d $(git log -1 --format=%cs) +v%Y.%m.%d) >> $GITHUB_OUTPUT
+      - name: Write package.json
+        uses: jsdaniell/create-json@v1.2.2
+        env:
+          name: framework-realtek-ambz2
+          version: ${{ inputs.version || steps.version.outputs.version }}
+          description: sdk for amebaz2
+        with:
+          name: package.json
+          json: ${{ toJSON(env) }}
+      - name: Cleanup repository
+        run: |
+          git checkout -B platformio
+          rm -rf component/common/network/lwip/lwip_v2.0.2/doc/
+          rm -rf component/soc/realtek/8710c/misc/bsp/lib/common/IAR/
+          rm -rf component/soc/realtek/8710c/misc/iar_utility/
+          rm -rf doc/
+          rm -rf project/realtek_amebaz2_v0_example/EWARM-RELEASE/
+          rm -rf tools/
+      - name: Commit and push changes
+        env:
+          version: ${{ inputs.version || steps.version.outputs.version }}
+        run: |
+          git config --global user.email "gh-actions@libretuya.ml"
+          git config --global user.name "GitHub Actions"
+          git add .
+          git commit -m "[${{ env.version }}] Prepare PlatformIO package"
+          git tag ${{ env.version }}
+          git remote set-url origin https://github.com/${{ github.repository }}
+          git push --force origin platformio
+          git push origin ${{ env.version }}
