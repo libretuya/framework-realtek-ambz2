@@ -4,6 +4,7 @@
 
 sdk for amebaz2
 
+- Template v1
 - [Upstream repository](https://github.com/ambiot/ambz2_sdk)
 - [See all tags](https://github.com/libretuya/framework-realtek-ambz2/tags)
 - [See all files](https://github.com/libretuya/framework-realtek-ambz2/tree/platformio)
